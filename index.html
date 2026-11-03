@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Family Money Entry</title>
+<meta name="theme-color" content="#1F4E5F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Money Entry">
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* One narrow column: entry card first, recent entries below. Works one-handed on a phone. */
+:root{
+  --bg:#F3F6F6; --surface:#FFFFFF; --ink:#1B2B33; --muted:#647780; --line:#D9E2E4;
+  --accent:#1F4E5F; --accent-soft:#E3EEF1; --in:#2E7D4F; --in-soft:#E2F2E8; --out:#B5483D; --out-soft:#F8E6E3;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0F1A1E; --surface:#16252B; --ink:#E4ECEE; --muted:#93A6AD; --line:#2A3C43;
+  --accent:#7FC0D3; --accent-soft:#1E3640; --in:#6CC492; --in-soft:#173126; --out:#EE8C80; --out-soft:#3A1F1C; color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.45}
+.wrap{max-width:560px;margin:0 auto;padding:20px 16px 48px;display:grid;gap:18px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+h1{font-size:1.45rem;margin:0;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:.85rem;margin:2px 0 0}
+.month{display:flex;gap:14px;font-family:var(--mono);font-size:.85rem;font-variant-numeric:tabular-nums}
+.month b{display:block;font-family:var(--sans);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.month small{display:block;color:var(--muted);font-size:.72rem}
+.pos{color:var(--in)} .neg{color:var(--out)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:16px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--bg);border-radius:10px;padding:4px;gap:4px}
+.seg button{border:0;background:transparent;padding:10px;border-radius:8px;font:600 .95rem var(--sans);color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"].exp{background:var(--out-soft);color:var(--out)}
+.seg button[aria-pressed="true"].inc{background:var(--in-soft);color:var(--in)}
+.lbl{font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px}
+.amount{display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--line);padding-bottom:4px}
+.amount:focus-within{border-color:var(--accent)}
+.amount input{flex:1;min-width:0;border:0;background:transparent;font:600 2rem var(--mono);color:var(--ink);padding:4px 0;outline:none}
+.cur{display:flex;gap:4px}
+.cur button{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:8px;padding:6px 10px;font:600 .85rem var(--mono);cursor:pointer}
+.cur button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.conv{font-size:.8rem;color:var(--muted);min-height:1.1em;margin-top:4px;font-family:var(--mono)}
+.row2{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
+input[type=date],input[type=text],input[type=password]{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:11px 12px;font:500 1rem var(--sans)}
+input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.quick{display:flex;gap:6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:8px 14px;font:500 .92rem var(--sans);cursor:pointer}
+.chip.small{padding:7px 11px;font-size:.85rem}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.chip:disabled{opacity:.4;cursor:not-allowed}
+.save{border:0;border-radius:12px;padding:14px;font:700 1rem var(--sans);cursor:pointer;background:var(--accent);color:var(--surface)}
+.save:disabled{opacity:.45;cursor:not-allowed}
+.toast{font-size:.88rem;font-weight:600;color:var(--in);min-height:1.2em;text-align:center}
+.toast.err{color:var(--out)}
+h2{font-size:1.02rem;margin:0}
+.hint{font-size:.8rem;color:var(--muted);margin:0}
+.item{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.item .what{min-width:0}
+.item .cat{font-weight:600}
+.item .meta{font-size:.8rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .amt{font-family:var(--mono);font-weight:600}
+.item.deleted{opacity:.45}
+.item.deleted .cat{text-decoration:line-through}
+.del{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:1.1rem;padding:4px 8px;border-radius:6px}
+.del:hover{color:var(--out);background:var(--out-soft)}
+.confirm{display:flex;gap:6px;align-items:center;font-size:.8rem}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:6px 10px;font:600 .8rem var(--sans);cursor:pointer}
+.btn.danger{background:var(--out-soft);color:var(--out);border-color:transparent}
+.empty{color:var(--muted);font-size:.9rem;padding:8px 0}
+.lock{display:grid;gap:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Family Money Entry</h1>
+      <p class="sub">Goes straight into Family Hub · Money_Log</p>
+    </div>
+    <div class="month" aria-label="This month in Money_Log">
+      <div><b>In · <span id="mName">—</span></b><span class="pos" id="mIn">—</span><small id="mInP"></small></div>
+      <div><b>Out</b><span class="neg" id="mOut">—</span><small id="mOutP"></small></div>
+    </div>
+  </header>
+
+  <section class="card lock" id="pinCard" hidden>
+    <h2>Enter the family PIN</h2>
+    <input type="password" id="pin" inputmode="numeric" autocomplete="off" placeholder="PIN">
+    <button class="save" id="pinBtn" type="button">Unlock</button>
+    <div class="toast err" id="pinMsg"></div>
+  </section>
+
+  <form class="card" id="f" autocomplete="off">
+    <div class="seg" role="group" aria-label="Type">
+      <button type="button" class="exp" id="tExp" aria-pressed="true">Expense</button>
+      <button type="button" class="inc" id="tInc" aria-pressed="false">Income</button>
+    </div>
+
+    <div>
+      <label class="lbl" for="amt">Amount</label>
+      <div class="amount">
+        <input id="amt" inputmode="decimal" placeholder="0.00">
+        <div class="cur" role="group" aria-label="Currency">
+          <button type="button" id="cUSD" aria-pressed="true">$</button>
+          <button type="button" id="cKHR" aria-pressed="false">៛</button>
+        </div>
+      </div>
+      <div class="conv" id="conv"></div>
+    </div>
+
+    <div class="row2">
+      <div>
+        <label class="lbl" for="date">Date</label>
+        <input type="date" id="date" required>
+      </div>
+      <div class="quick">
+        <button type="button" class="chip small" id="dToday">Today</button>
+        <button type="button" class="chip small" id="dYest">Yesterday</button>
+      </div>
+    </div>
+
+    <div>
+      <span class="lbl">Category</span>
+      <div class="chips" id="cats" role="group" aria-label="Category"><span class="hint">Loading lists…</span></div>
+    </div>
+
+    <div id="whoBox">
+      <span class="lbl">Who is it for</span>
+      <div class="chips" id="whos" role="group" aria-label="Who"></div>
+    </div>
+
+    <div>
+      <span class="lbl">Repeat monthly</span>
+      <div class="chips" id="reps" role="group" aria-label="Repeat monthly"></div>
+      <p class="hint" id="repHint"></p>
+    </div>
+
+    <div>
+      <label class="lbl" for="note">Note <span style="text-transform:none;letter-spacing:0;font-weight:400">(optional)</span></label>
+      <input type="text" id="note" placeholder="e.g. Market, fuel, Phanu medicine">
+    </div>
+
+    <div>
+      <span class="lbl">Entered by</span>
+      <div class="chips" id="bys" role="group" aria-label="Entered by"></div>
+    </div>
+
+    <button class="save" id="saveBtn" type="submit" disabled>Save entry</button>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </form>
+
+  <section class="card">
+    <h2>Recent entries</h2>
+    <div id="recent"><div class="empty">Loading…</div></div>
+    <p class="hint">Delete removes the entry (all its months) from Money_Log.</p>
+  </section>
+</div>
+
+<script>
+var S = { type:'Expense', cur:'USD', cat:null, who:null, months:1, by:'', lists:null, rate:4000, pin:'' };
+var BYS = ['Sarath','Vannareth','Other'];
+var REPS = [[1,'Once'],[3,'3 months'],[6,'6 months'],[12,'12 months'],[24,'24 months']];
+function $(id){ return document.getElementById(id); }
+function store(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } }
+function iso(d){ var z=new Date(d.getTime()-d.getTimezoneOffset()*60000); return z.toISOString().slice(0,10); }
+function today(){ return iso(new Date()); }
+function yest(){ var d=new Date(); d.setDate(d.getDate()-1); return iso(d); }
+function money(n){ return '$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function money0(n){ return '$'+Math.round(Number(n)).toLocaleString('en-US'); }
+function niceDate(s){ if(!s) return ''; var p=s.split('-'); return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+function toast(msg, err){ var t=$('toast'); t.textContent=msg; t.className='toast'+(err?' err':''); clearTimeout(toast.h); toast.h=setTimeout(function(){t.textContent='';}, 6000); }
+// ---- Paste your Apps Script web app URL (ends with /exec) between the quotes: ----
+var API = 'https://script.google.com/macros/s/AKfycbzDz_qhLR32AP6ldXrzobElED-wGGDVL1rUfiQrDvQeqjTBPszVUbkmauLli_73b_LyLg/exec';
+
+var ACTIONS = { getSetup:function(a){return {action:'setup'};}, saveEntry:function(a){return {action:'save', entry:a[0], pin:a[1]};},
+  deleteEntry:function(a){return {action:'delete', id:a[0], pin:a[1]};}, checkPin:function(a){return {action:'checkPin', pin:a[0]};} };
+function run(fn, args, ok, fail){
+  var onFail = fail || function(m){ toast(m, true); };
+  var body = ACTIONS[fn](args);
+  if (body.pin === undefined) body.pin = S.pin;
+  if (API.indexOf('https://script.google.com/') !== 0) { onFail('Set the web app link (API) in this page first.'); return; }
+  fetch(API, { method:'POST', body: JSON.stringify(body) })   // plain-text body: no CORS preflight
+    .then(function(r){ return r.json(); })
+    .then(function(j){ if (j.ok) ok(j.data); else onFail(j.error || 'Something went wrong.'); })
+    .catch(function(){ onFail('Could not reach Family Hub. Check your internet connection.'); });
+}
+function chipEl(text, pressed, onClick, disabled){
+  var b=document.createElement('button'); b.type='button'; b.className='chip'; b.textContent=text;
+  b.setAttribute('aria-pressed', pressed); if(disabled) b.disabled=true; b.onclick=onClick; return b;
+}
+
+/* ---------- form ---------- */
+function setType(t){
+  S.type=t; $('tExp').setAttribute('aria-pressed', t==='Expense'); $('tInc').setAttribute('aria-pressed', t==='Income');
+  S.cat=null; S.who = t==='Income' ? 'Family' : (S.who||'Family'); render(); }
+function pickCat(c){
+  S.cat=c;
+  if(S.type==='Expense'){
+    if(c==='Elderly') S.who='Elderly';
+    else if(c==='Kids'){ if(S.who!=='Phanu' && S.who!=='Thavath') S.who=null; }
+    else if(!S.who || S.who==='Elderly') S.who='Family';
+  }
+  render();
+}
+function render(){
+  if(!S.lists) return;
+  var cats=$('cats'); cats.innerHTML='';
+  (S.type==='Income'?S.lists.income:S.lists.expense).forEach(function(c){ cats.appendChild(chipEl(c, S.cat===c, function(){pickCat(c);})); });
+  $('whoBox').hidden = S.type==='Income';
+  var whos=$('whos'); whos.innerHTML='';
+  S.lists.who.forEach(function(w){
+    var dis = (S.cat==='Kids' && w!=='Phanu' && w!=='Thavath') || (S.cat==='Elderly' && w!=='Elderly');
+    whos.appendChild(chipEl(w, S.who===w, function(){ S.who=w; render(); }, dis));
+  });
+  var reps=$('reps'); reps.innerHTML='';
+  REPS.forEach(function(r){ reps.appendChild(chipEl(r[1], S.months===r[0], function(){ S.months=r[0]; render(); })); });
+  $('repHint').textContent = S.months>1 ? 'Adds '+S.months+' rows, one each month from the date above. Future months count as Planned.' : '';
+  var bys=$('bys'); bys.innerHTML='';
+  BYS.forEach(function(b){ bys.appendChild(chipEl(b, S.by===b, function(){ S.by=b; store('fme-by', b); render(); })); });
+  validate();
+}
+function amountUSD(){
+  var v=parseFloat(($('amt').value||'').replace(/,/g,''));
+  if(!isFinite(v)||v<=0) return null;
+  return S.cur==='KHR' ? Math.round(v/S.rate*100)/100 : Math.round(v*100)/100;
+}
+function setCur(c){ S.cur=c; $('cUSD').setAttribute('aria-pressed', c==='USD'); $('cKHR').setAttribute('aria-pressed', c==='KHR'); $('amt').placeholder = c==='KHR'?'0':'0.00'; validate(); }
+function validate(){
+  var usd=amountUSD();
+  $('conv').textContent = S.cur==='KHR' && usd ? '= '+money(usd)+' at '+S.rate.toLocaleString()+' ៛ per $' : '';
+  var ok = S.lists && usd && $('date').value && S.cat && S.who && !S.locked;
+  $('saveBtn').disabled=!ok;
+  $('saveBtn').textContent = ok ? 'Save '+S.type.toLowerCase()+' · '+money(usd)+(S.months>1?' × '+S.months+' months':'')
+    : (!usd?'Enter an amount':!S.cat?'Pick a category':!S.who?'Pick who it is for':'Save entry');
+}
+$('tExp').onclick=function(){setType('Expense');};
+$('tInc').onclick=function(){setType('Income');};
+$('cUSD').onclick=function(){setCur('USD');};
+$('cKHR').onclick=function(){setCur('KHR');};
+$('dToday').onclick=function(){ $('date').value=today(); validate(); };
+$('dYest').onclick=function(){ $('date').value=yest(); validate(); };
+$('amt').addEventListener('input', validate);
+$('date').addEventListener('input', validate);
+
+$('f').addEventListener('submit', function(e){
+  e.preventDefault();
+  var usd=amountUSD(); if(!usd||!S.cat||!S.who) return;
+  var entry = { date:$('date').value, type:S.type, category:S.cat, who:S.who,
+    amount: parseFloat(($('amt').value||'').replace(/,/g,'')), currency:S.cur, months:S.months,
+    note:$('note').value.trim(), by:S.by };
+  $('saveBtn').disabled=true; $('saveBtn').textContent='Saving…';
+  run('saveEntry', [entry, S.pin], function(res){
+    toast('✓ '+res.message); $('amt').value=''; $('note').value=''; S.months=1;
+    showMonth(res.month); showRecent(res.recent); render(); $('amt').focus();
+  }, function(msg){ toast(msg, true); validate(); });
+});
+
+/* ---------- month + recent ---------- */
+function showMonth(m){
+  if(!m) return;
+  $('mName').textContent=m.label; $('mIn').textContent=money0(m.income); $('mOut').textContent=money0(m.expense);
+  $('mInP').textContent = m.plannedIncome ? '+'+money0(m.plannedIncome)+' planned' : '';
+  $('mOutP').textContent = m.plannedExpense ? '+'+money0(m.plannedExpense)+' planned' : '';
+}
+function showRecent(list){
+  var box=$('recent'); box.innerHTML='';
+  if(!list || !list.length){ box.innerHTML='<div class="empty">No entries from this page yet.</div>'; return; }
+  list.forEach(function(e){
+    var row=document.createElement('div'); row.className='item'+(e.status==='Deleted'?' deleted':'');
+    var w=document.createElement('div'); w.className='what';
+    var c=document.createElement('div'); c.className='cat'; c.textContent=e.category+(e.months>1?' · '+e.months+' months':'');
+    var m=document.createElement('div'); m.className='meta';
+    m.textContent=[niceDate(e.date), e.type==='Income'?'Income':e.who, e.note, e.by?'by '+e.by:'', e.status==='Deleted'?'deleted':''].filter(Boolean).join(' · ');
+    w.appendChild(c); w.appendChild(m);
+    var a=document.createElement('div'); a.className='amt '+(e.type==='Income'?'pos':'neg'); a.textContent=(e.type==='Income'?'+':'−')+money(e.amount);
+    row.appendChild(w); row.appendChild(a);
+    if(e.status!=='Deleted'){
+      var x=document.createElement('button'); x.className='del'; x.type='button'; x.textContent='×'; x.setAttribute('aria-label','Delete '+e.category);
+      x.onclick=function(){
+        var cf=document.createElement('div'); cf.className='confirm';
+        var yes=document.createElement('button'); yes.className='btn danger'; yes.type='button'; yes.textContent='Delete';
+        var no=document.createElement('button'); no.className='btn'; no.type='button'; no.textContent='Keep';
+        no.onclick=function(){ cf.replaceWith(x); };
+        yes.onclick=function(){ yes.disabled=true; run('deleteEntry',[e.id, S.pin], function(res){ toast(res.message); showRecent(res.recent); showMonth(res.month); }); };
+        cf.appendChild(yes); cf.appendChild(no); x.replaceWith(cf);
+      };
+      row.appendChild(x);
+    } else row.appendChild(document.createElement('span'));
+    box.appendChild(row);
+  });
+}
+
+/* ---------- PIN ---------- */
+function lock(on){ S.locked=on; $('pinCard').hidden=!on; $('f').style.opacity=on?'.4':'1'; validate(); }
+
+
+/* ---------- start ---------- */
+$('date').value=today();
+S.by = store('fme-by') || '';
+S.pin = store('fme-pin') || '';
+function loadSetup(){
+  run('getSetup', [], function(res){
+    S.lists={expense:res.expense, income:res.income, who:res.who}; S.rate=res.rate||4000; if(!S.who) S.who='Family';
+    if (res.locked) { if (S.pin) $('pinMsg').textContent='Enter the PIN again.'; S.pin=''; lock(true); $('recent').innerHTML='<div class="empty">Unlock to see recent entries.</div>'; }
+    else { lock(false); showMonth(res.month); showRecent(res.recent); }
+    render();
+  }, function(msg){ $('cats').innerHTML=''; toast('Could not load: '+msg, true); });
+}
+$('pinBtn').onclick=function(){
+  var p=$('pin').value.trim(); if(!p) return;
+  run('checkPin',[p], function(){ S.pin=p; store('fme-pin', p); $('pinMsg').textContent=''; $('pin').value=''; loadSetup(); },
+      function(msg){ $('pinMsg').textContent=msg; });
+};
+loadSetup();
+</script>
+</body>
+</html>
